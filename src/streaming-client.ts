@@ -155,6 +155,10 @@ export class RevAiStreamingClient extends EventEmitter {
             thisClone.doSendLoop();
         };
 
+        this.client.onclose = function(evt) {
+            console.log('WebSocket Client Closed', evt);
+        };
+
         this.client.onmessage = function(e) {
             if (this.streamsClosed) {
                 return;
