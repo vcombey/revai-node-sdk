@@ -1,5 +1,4 @@
 import * as FormData from 'form-data';
-import * as fs from 'fs';
 import { Readable } from 'stream';
 
 import { BaseApiClient } from './base-api-client';
@@ -20,7 +19,7 @@ export class LanguageIdClient extends BaseApiClient<LanguageIdJob, LanguageIdRes
      * @param accessToken Access token used to validate API requests
      * @param version (optional) version of the API to be used
      */
-     constructor(accessToken: string) {
+    constructor(accessToken: string) {
         super(accessToken, 'languageid', 'v1');
     }
 
@@ -61,7 +60,7 @@ export class LanguageIdClient extends BaseApiClient<LanguageIdJob, LanguageIdRes
      * @param options Options submitted with the job: see LanguageIdJobOptions object
      * @returns Details of the submitted job
      */
-     async submitJob(options: LanguageIdJobOptions = {}): Promise<LanguageIdJob> {
+    async submitJob(options: LanguageIdJobOptions = {}): Promise<LanguageIdJob> {
         return super._submitJob(options);
     }
 
@@ -74,7 +73,7 @@ export class LanguageIdClient extends BaseApiClient<LanguageIdJob, LanguageIdRes
      *     or https://docs.rev.ai/api/language-identification/reference/#operation/SubmitLanguageIdentificationJob
      * @returns Details of submitted job
      */
-     async submitJobAudioData(
+    async submitJobAudioData(
         audioData: Buffer | Readable,
         filename?: string,
         options?: LanguageIdJobOptions
@@ -99,17 +98,6 @@ export class LanguageIdClient extends BaseApiClient<LanguageIdJob, LanguageIdRes
      *     or https://docs.rev.ai/api/language-identification/reference/#operation/SubmitLanguageIdentificationJob
      * @returns Details of submitted job
      */
-    async submitJobLocalFile(filepath: string, options?: LanguageIdJobOptions): Promise<LanguageIdJob> {
-        const payload = new FormData();
-        payload.append('media', fs.createReadStream(filepath));
-        if (options) {
-            options = this.filterNullOptions(options);
-            payload.append('options', JSON.stringify(options));
-        }
-
-        return await this.apiHandler.makeApiRequest<LanguageIdJob>('post', `/jobs`,
-            payload.getHeaders(), 'json', payload, TWO_GIGABYTES);
-    }
 
     /**
      * See https://docs.rev.ai/api/language-identification/reference/#operation/GetLanguageIdentificationResultById

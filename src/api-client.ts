@@ -1,5 +1,4 @@
 import * as FormData from 'form-data';
-import * as fs from 'fs';
 import { Readable } from 'stream';
 
 import { ApiRequestHandler } from './api-request-handler';
@@ -26,7 +25,7 @@ export class RevAiApiClient {
      * @param accessToken Access token used to validate API requests
      * @param version (optional) version of the API to be used
      */
-    constructor (accessToken: string, version = 'v1') {
+    constructor(accessToken: string, version = 'v1') {
         this.apiHandler = new ApiRequestHandler(`https://api.rev.ai/speechtotext/${version}/`, accessToken);
     }
 
@@ -149,17 +148,6 @@ export class RevAiApiClient {
      *     or https://docs.rev.ai/api/asynchronous/reference/#operation/SubmitTranscriptionJob
      * @returns Details of submitted job
      */
-    async submitJobLocalFile(filepath: string, options?: RevAiJobOptions): Promise<RevAiApiJob> {
-        const payload = new FormData();
-        payload.append('media', fs.createReadStream(filepath));
-        if (options) {
-            options = this.filterNullOptions(options);
-            payload.append('options', JSON.stringify(options));
-        }
-
-        return await this.apiHandler.makeApiRequest<RevAiApiJob>('post', `/jobs`,
-            payload.getHeaders(), 'json', payload, TWO_GIGABYTES);
-    }
 
     /**
      * See https://docs.rev.ai/api/asynchronous/reference/#operation/GetTranscriptById
