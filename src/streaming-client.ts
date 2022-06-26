@@ -148,9 +148,11 @@ export class RevAiStreamingClient extends EventEmitter {
     }
 
     private setUpConnectedHandlers(): void {
+
+        let thisClone = this
         this.client.onopen = function() {
             console.log('WebSocket Client Connected');
-            this.doSendLoop();
+            thisClone.doSendLoop();
         };
 
         this.client.onmessage = function(e) {
@@ -222,8 +224,10 @@ export class RevAiStreamingClient extends EventEmitter {
             if (value !== null) {
                 this.client.send(value);
             }
-            setTimeout(() => this.doSendLoop(), 100);
+        } else {
+            console.log('not ready');
         }
+        setTimeout(() => this.doSendLoop(), 100);
     }
 
     private closeStreams(): void {
