@@ -10,7 +10,7 @@ export type HttpMethodTypes = 'post' | 'get' | 'delete';
 export type AxiosResponseTypes = 'stream' | 'json' | 'text';
 
 // tslint:disable-next-line
-const sdkVersion = require('../package.json').version;
+const sdkVersion = require('../../package.json').version;
 
 /**
  * Abstract class which should be inherited to make use of creating api calls
@@ -21,7 +21,7 @@ export class ApiRequestHandler {
     /** Single instance of axios which uses provided arguments for all requests */
     instance: AxiosInstance;
 
-    constructor (url: string, accessToken: string) {
+    constructor(url: string, accessToken: string) {
         this.instance = axios.create({
             baseURL: url,
             maxContentLength: Infinity,
@@ -32,7 +32,7 @@ export class ApiRequestHandler {
         });
     }
 
-    public async makeApiRequest<Response> (
+    public async makeApiRequest<Response>(
         method: HttpMethodTypes,
         url: string,
         headers: {},

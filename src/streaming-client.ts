@@ -13,7 +13,7 @@ import {
 } from './models/streaming/StreamingResponses';
 
 // tslint:disable-next-line
-const sdkVersion = require('../package.json').version;
+const sdkVersion = require('../../package.json').version;
 
 /**
  * Client which handles a streaming connection to the Rev AI API.
