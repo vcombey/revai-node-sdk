@@ -1,6 +1,6 @@
 {
   "name": "revai-node-sdk-fork",
-  "version": "3.5.3",
+  "version": "3.5.4",
   "description": "Rev AI makes speech applications easy to build!",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",

@@ -172,50 +172,6 @@ export class RevAiStreamingClient extends EventEmitter {
                 }
             }
         };
-        // this.client.onclose((c: ICloseEvent) => {
-        //     this.emit('close', c.code, c.reason);
-        //     this.closeStreams();
-        // })
-
-        // this.doSendLoop(conn);
-        // this.client.onopen = function() {
-        //     console.log('WebSocket Client Connected');
-
-        //     function sendNumber() {
-        //         if (client.readyState === client.OPEN) {
-        //             var number = Math.round(Math.random() * 0xFFFFFF);
-        //             client.send(number.toString());
-        //             setTimeout(sendNumber, 1000);
-        //         }
-        //     }
-        //     sendNumber();
-        // };
-
-
-        // this.client.on('connect', (conn: connection) => {
-        //     conn.on('error', (error: Error) => {
-        //         this.emit('error', error);
-        //         this.closeStreams();
-        //     });
-        //     conn.on('close', (code: number, reason: string) => {
-        //         this.emit('close', code, reason);
-        //         this.closeStreams();
-        //     });
-        //     conn.on('message', (message: Message) => {
-        //         if (this.streamsClosed) {
-        //             return;
-        //         }
-        //         if (message.type === 'utf8') {
-        //             let response = JSON.parse(message.utf8Data);
-        //             if ((response as StreamingResponse).type === 'connected') {
-        //                 this.emit('connect', response as StreamingConnected);
-        //             } else if (this.responses.writable) {
-        //                 this.responses.write(response as StreamingHypothesis);
-        //             }
-        //         }
-        //     });
-        //     this.doSendLoop(conn);
-        // });
     }
 
     private doSendLoop(): void {
