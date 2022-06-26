@@ -12,7 +12,7 @@ export class BufferedDuplex extends Duplex {
      * @param output Buffer for the Readable side of the stream.
      * @param options Options to be passed through to the superclass.
      */
-    constructor (input: PassThrough, output: PassThrough, options?: DuplexOptions) {
+    constructor(input: PassThrough, output: PassThrough, options?: DuplexOptions) {
         super(options);
         this.input = input;
         this.output = output;
@@ -21,7 +21,7 @@ export class BufferedDuplex extends Duplex {
     }
 
     public _write(chunk: any, encoding: string, callback: (error?: Error | null) => void): boolean {
-        const needsDrain = this.input.write(chunk, encoding, () => needsDrain && callback());
+        const needsDrain = this.input.write(chunk, encoding as BufferEncoding, () => needsDrain && callback());
         if (!needsDrain) {
             this.input.once('drain', callback);
         }
