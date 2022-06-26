@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import { IncomingMessage } from 'http';
 import { Duplex, PassThrough } from 'stream';
-import { client, connection, Message } from 'websocket';
+import { w3cwebsocket, connection, Message, ICloseEvent } from 'websocket';
 
 import { AudioConfig } from './models/streaming/AudioConfig';
 import { BufferedDuplex } from './models/streaming/BufferedDuplex';
@@ -30,7 +30,7 @@ const sdkVersion = require('../package.json').version;
  */
 export class RevAiStreamingClient extends EventEmitter {
     baseUrl: string;
-    client: client;
+    client: w3cwebsocket;
     private streamsClosed: boolean;
     private accessToken: string;
     private config: AudioConfig;
@@ -43,7 +43,7 @@ export class RevAiStreamingClient extends EventEmitter {
      * @param config Configuration of the audio the user will send from this client
      * @param version (optional) Version of the Rev AI API the user wants to use
      */
-    constructor(accessToken: string, config: AudioConfig, version = 'v1') {
+    constructor(accessToken: string, config: AudioConfig, version = 'v1', sessionConfig?: SessionConfig) {
         super();
         this.streamsClosed = false;
         this.accessToken = accessToken;
@@ -55,26 +55,13 @@ export class RevAiStreamingClient extends EventEmitter {
             readableObjectMode: true,
             writableObjectMode: true
         });
-        this.client = new client({
-            // @ts-ignore
-            keepalive: true,
-            keepaliveInterval: 30000
-        });
+        this.setupWebsocket(sessionConfig)
         this.setUpHttpResponseHandler();
         this.setUpConnectionFailureHandler();
         this.setUpConnectedHandlers();
     }
 
-    /**
-     * Begins a streaming connection. Returns a duplex
-     * from which the user can read responses from the api and to which the user
-     * should write their audio data
-     * @param config (Optional) Optional configuration for the streaming session
-     *
-     * @returns BufferedDuplex. Data written to this buffer will be sent to the api
-     * Data received from the api can be read from this duplex
-     */
-    public start(config?: SessionConfig): Duplex {
+    public setupWebsocket(config?: SessionConfig) {
         let url = this.baseUrl +
             `?access_token=${this.accessToken}` +
             `&content_type=${this.config.getContentTypeString()}` +
@@ -108,8 +95,25 @@ export class RevAiStreamingClient extends EventEmitter {
                 url += `&language=${encodeURIComponent(config.language)}`;
             }
         }
+        this.client = new w3cwebsocket(url, undefined, undefined, undefined,
+            {
+                // @ts-ignore
+                keepalive: true,
+                keepaliveInterval: 30000
+            }, undefined
+        );
 
-        this.client.connect(url);
+    }
+    /**
+     * Begins a streaming connection. Returns a duplex
+     * from which the user can read responses from the api and to which the user
+     * should write their audio data
+     * @param config (Optional) Optional configuration for the streaming session
+     *
+     * @returns BufferedDuplex. Data written to this buffer will be sent to the api
+     * Data received from the api can be read from this duplex
+     */
+    public start(): Duplex {
         return this.protocol;
     }
 
@@ -125,38 +129,37 @@ export class RevAiStreamingClient extends EventEmitter {
      * after this is called.
      */
     public unsafeEnd(): void {
-        this.client.abort();
+        this.client.close();
         this.closeStreams();
     }
 
     private setUpHttpResponseHandler(): void {
-        this.client.on('httpResponse', (response: IncomingMessage) => {
-            this.emit('httpResponse', response.statusCode);
-            this.closeStreams();
-        });
+        // this.client.on('httpResponse', (response: IncomingMessage) => {
+        //     this.emit('httpResponse', response.statusCode);
+        //     this.closeStreams();
+        // });
     }
 
     private setUpConnectionFailureHandler(): void {
-        this.client.on('connectFailed', (error: Error) => {
-            this.emit('connectFailed', error);
-            this.closeStreams();
-        });
+        // this.client.on('connectFailed', (error: Error) => {
+        //     this.emit('connectFailed', error);
+        //     this.closeStreams();
+        // });
     }
 
     private setUpConnectedHandlers(): void {
-        this.client.on('connect', (conn: connection) => {
-            conn.on('error', (error: Error) => {
-                this.emit('error', error);
-                this.closeStreams();
-            });
-            conn.on('close', (code: number, reason: string) => {
-                this.emit('close', code, reason);
-                this.closeStreams();
-            });
-            conn.on('message', (message: Message) => {
-                if (this.streamsClosed) {
-                    return;
-                }
+        this.client.onopen = function() {
+            console.log('WebSocket Client Connected');
+            this.doSendLoop();
+        };
+
+        this.client.onmessage = function(e) {
+            if (this.streamsClosed) {
+                return;
+            }
+            if (typeof e.data === 'string') {
+                console.log("Received: '" + e.data + "'");
+                const message = JSON.parse(e.data)
                 if (message.type === 'utf8') {
                     let response = JSON.parse(message.utf8Data);
                     if ((response as StreamingResponse).type === 'connected') {
@@ -165,22 +168,61 @@ export class RevAiStreamingClient extends EventEmitter {
                         this.responses.write(response as StreamingHypothesis);
                     }
                 }
-            });
-            this.doSendLoop(conn);
-        });
+            }
+        };
+        // this.client.onclose((c: ICloseEvent) => {
+        //     this.emit('close', c.code, c.reason);
+        //     this.closeStreams();
+        // })
+
+        // this.doSendLoop(conn);
+        // this.client.onopen = function() {
+        //     console.log('WebSocket Client Connected');
+
+        //     function sendNumber() {
+        //         if (client.readyState === client.OPEN) {
+        //             var number = Math.round(Math.random() * 0xFFFFFF);
+        //             client.send(number.toString());
+        //             setTimeout(sendNumber, 1000);
+        //         }
+        //     }
+        //     sendNumber();
+        // };
+
+
+        // this.client.on('connect', (conn: connection) => {
+        //     conn.on('error', (error: Error) => {
+        //         this.emit('error', error);
+        //         this.closeStreams();
+        //     });
+        //     conn.on('close', (code: number, reason: string) => {
+        //         this.emit('close', code, reason);
+        //         this.closeStreams();
+        //     });
+        //     conn.on('message', (message: Message) => {
+        //         if (this.streamsClosed) {
+        //             return;
+        //         }
+        //         if (message.type === 'utf8') {
+        //             let response = JSON.parse(message.utf8Data);
+        //             if ((response as StreamingResponse).type === 'connected') {
+        //                 this.emit('connect', response as StreamingConnected);
+        //             } else if (this.responses.writable) {
+        //                 this.responses.write(response as StreamingHypothesis);
+        //             }
+        //         }
+        //     });
+        //     this.doSendLoop(conn);
+        // });
     }
 
-    private doSendLoop(conn: connection): void {
-        if (conn.connected) {
+    private doSendLoop(): void {
+        if (this.client.readyState === this.client.OPEN) {
             const value = this.requests.read();
             if (value !== null) {
-                if (typeof value === 'string') {
-                    conn.sendUTF(value);
-                } else {
-                    conn.send(value);
-                }
+                this.client.send(value);
             }
-            setTimeout(() => this.doSendLoop(conn), 100);
+            setTimeout(() => this.doSendLoop(), 100);
         }
     }
 
